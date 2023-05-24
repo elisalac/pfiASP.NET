@@ -1,0 +1,118 @@
+﻿@model IEnumerable<ChatManager.Models.User>
+
+@{
+    ViewBag.Title = "Index";
+    var linkUrl = Url.Action("Chats", "Chat");
+}
+<h3>Conversations</h3>
+<hr />
+<div id="messagesPanel"></div>
+
+@section Scripts{
+
+    <script defer>
+        let messagesPanelUpdater = new PartialRefresh("/Chat/GetChatLogs", "messagesPanel", 5, UpdateMessagesCallback);
+
+        function UpdateFriendsCallback() {
+            messagesPanelUpdater.refresh(true);
+            $(".unselectedTarget").click(function () {
+                var userId = $(this).attr("userid");
+                ajaxActionCall("/Chat/SetCurrentTarget/" + userId, () => { friendsPanelUpdater.refresh(true); messagesPanelUpdater.refresh(true); });
+            })
+        }
+        let editing = false;
+        let targetTyping = false;
+
+        function setEditing(value) {
+            editing = value;
+            if (editing)
+                messagesPanelUpdater.pause();
+            else
+                messagesPanelUpdater.restart();
+        }
+        function sendMessage() {
+            var message = $('#message').val();
+            $('#message').val("");
+            if (message != "") {
+                messagesPanelUpdater.command("/Chat/Send?message=" + message, UpdateMessagesCallback);
+            }
+        }
+        $('#message').keypress(function (event) {
+            var keycode = (event.keyCode ? event.keyCode : event.which);
+            if (keycode == '13') {
+                sendMessage();
+            }
+        });
+        /*$('#message').focus(function (event) {
+            ajaxActionCall("/chat/IsTyping");
+            console.log("focus")
+        });
+        $('#message').blur(function (event) {
+            ajaxActionCall("/chat/StopTyping");
+            console.log("blur")
+        });*/
+        $(document).on('keyup', function (event) {
+            if (event.key == "Escape") {
+                $("#message").val("");
+            }
+        });
+
+        function UpdateMessagesCallback() {
+            $("#typing").hide();
+            $(".editMessage").hide();
+            $("#messagesPanel").scrollTop($("#messagesPanel")[0].scrollHeight + 100);
+
+            $(".contentImage").click(function (event) {
+                event.stopPropagation();
+            })
+            $("a").click(function (event) {
+                event.stopPropagation();
+            })
+            $(".sent").click(function () {
+                if (!editing) {
+                    setEditing(true);
+                    var message_id = $(this).attr("id").split("_")[1];
+                    $("#edit_" + message_id).show();
+                    $("#sent_" + message_id).hide();
+                    $("#delete_" + message_id).click(function () {
+                        setEditing(false);
+                        messagesPanelUpdater.confirmedCommand("Effacer ce message", "/Chat/Delete/" + message_id);
+                    })
+                    $("#update_" + message_id).click(function () {
+                        setEditing(false);
+                        var message = $("#" + message_id).val();
+                        messagesPanelUpdater.command("/Chat/Update?id=" + message_id + "&message=" + message);
+                    })
+                    $('#' + message_id).keypress(function (event) {
+                        var keycode = (event.keyCode ? event.keyCode : event.which);
+                        if (keycode == '13') {
+                            setEditing(false);
+                            var message = $("#" + message_id).val();
+                            messagesPanelUpdater.command("/Chat/Update?id=" + message_id + "&message=" + message);
+                        }
+                    });
+                    $(document).on('keyup', function (event) {
+                        if (event.key == "Escape") {
+                            $("#edit_" + message_id).hide();
+                            $("#sent_" + message_id).show();
+                            setEditing(false);
+                        }
+                    });
+                }
+            });
+        }
+
+        /*setInterval(() => { ajaxActionCall("/Chat/IsTargetTyping", UpdateTyping); }, 3000);
+
+        function UpdateTyping(show) {
+            if (show)
+                $("#typing").show();
+            else
+                $("#typing").hide();
+        }*/
+
+        $("#send").click(function () {
+            sendMessage();
+        })
+    </script>
+}

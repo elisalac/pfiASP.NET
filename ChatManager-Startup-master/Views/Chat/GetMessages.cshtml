@@ -1,0 +1,59 @@
+﻿@model IEnumerable<ChatManager.Models.Chat>
+
+@{
+    DateTime tempTime = new DateTime();
+    double elapsedTime = 0;
+    int selectedId = ViewBag.SelectedId;
+}
+@if ((int)Session["SelectedId"] == 0)
+{
+    <div class="messagesHeader">
+        <h4>Sélectionnez un ami...</h4>
+    </div>
+}
+
+@if ((int)Session["SelectedId"] != 0)
+{
+    <div class="messagesHeader">
+        <h4>Conversation avec</h4>
+        @Helper.AvatarUser(ChatManager.Models.DB.Users.Get((int)Session["SelectedId"]), "UserSmallAvatar")
+    </div>
+}
+
+@foreach (var item in Model)
+{
+
+    if (item.Id != 1)
+    {
+        TimeSpan variation = item.messageSentTime - tempTime;
+        elapsedTime += variation.TotalMinutes;
+    }
+
+
+    if (item.idAmi == selectedId || item.idUser == selectedId)
+    {
+        if (item.Id == 1 || elapsedTime >= 30)
+        {
+            <div class="messageTime">@item.messageSentTime</div>
+            elapsedTime = 0;
+        }
+
+        if (item.idAmi == ChatManager.Models.OnlineUsers.GetSessionUser().Id)
+        {
+            <div class="receivedLayout"><div class="received" title="@item.messageSentTime.ToShortTimeString()">@Helper.ParseContent(item.message)</div></div>
+            
+        }
+        if (item.idUser == ChatManager.Models.OnlineUsers.GetSessionUser().Id)
+        {
+            <div class="sentLayout">
+                <div class="sent" id="sent_@item.Id" title="@item.messageSentTime.ToShortTimeString()">@Helper.ParseContent(item.message)</div>
+            </div>
+            <div class="editMessage" id="edit_@item.Id">
+                <input id="@item.Id" value="@item.message" class="sent form-control" />
+                @Helper.Icon("update_" + item.Id, "icon fa fa-check smallerIcon", "Modifier ce message")
+                @Helper.Icon("delete_"+item.Id,"icon fa fa-times smallerIcon", "Effacer ce message")
+            </div>
+        }
+    }
+    tempTime = item.messageSentTime;
+}

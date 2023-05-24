@@ -1,0 +1,70 @@
+﻿@model IEnumerable<ChatManager.Models.User>
+@{
+    int id = ChatManager.Models.OnlineUsers.GetSessionUser().Id;
+
+}
+
+@foreach (var item in Model)
+{
+    <div class="friendContainer">
+        <a href="mailto:@item.Email" title="Créé le @item.CreationDate">
+            @Helper.AvatarUser(item, "UserSmallAvatar")
+        </a>
+
+        <span>@Helper.OnLineStatusIcon(ChatManager.Models.OnlineUsers.IsOnLine(item.Id), item.Blocked)</span>
+        @{
+            if (ChatManager.Models.DB.Friendships.ToList().Where(i => i.recievingId == item.Id && i.requestingId == ChatManager.Models.OnlineUsers.GetSessionUser().Id).FirstOrDefault() != null)
+            {
+                ChatManager.Models.Friendship friendship = ChatManager.Models.DB.Friendships.ToList().Where(i => i.recievingId == item.Id && i.requestingId == ChatManager.Models.OnlineUsers.GetSessionUser().Id).FirstOrDefault();
+                if (friendship.accepter == true && friendship.refuser == true)
+                {
+                    <span class="icon fa green fa-clock-o" title="Requête d'amitié avec @item.GetFullName() en attente"></span>
+                    @Helper.IconConfirmCmd("Friendships", "RemoveFriendshipRequest/" + item.Id, "command icon fa red fa-times", "Retirer " + item.GetFullName());
+                }
+                if (friendship.accepter == true && friendship.refuser == false)
+                {
+                    <span class="icon fa green fa-check-circle" title="Vous ête ami avec Andrew Kartsakis"></span>
+                    @Helper.IconConfirmCmd("Friendships", "RemoveFriendshipRequest/" + item.Id, "command icon fa red fa-times", "Retirer " + item.GetFullName());
+                }
+                if (friendship.accepter == false && friendship.refuser == true)
+                {
+                    <span class="icon fa red fa-times-circle" title="Vous avez décliné de la demande d'amitié avec  @item.GetFullName()"></span>
+                }
+            }
+            else if (ChatManager.Models.DB.Friendships.ToList().Where(i => i.recievingId == ChatManager.Models.OnlineUsers.GetSessionUser().Id && i.requestingId == item.Id).FirstOrDefault() != null)
+            {
+                ChatManager.Models.Friendship friendship = ChatManager.Models.DB.Friendships.GetFriendship(ChatManager.Models.OnlineUsers.GetSessionUser().Id, item.Id);
+                if (friendship.accepter == true && friendship.refuser == true)
+                {
+                    @Helper.IconConfirmCmd("Friendships", "AcceptFriendshipRequest/" + item.Id, "command icon fa green fa-check", "Accepter la demande d'amitié de " + item.GetFullName())
+                    @Helper.IconConfirmCmd("Friendships", "DeclineFriendshipRequest/" + item.Id, "command icon fa red fa-times", "Retirer " + item.GetFullName());
+                }
+                if (friendship.accepter == true && friendship.refuser == false)
+                {
+                    <span class="icon fa green fa-check-circle" title="Vous ête ami avec Andrew Kartsakis"></span>
+                    @Helper.IconConfirmCmd("Friendships", "RemoveFriendshipRequest/" + item.Id, "command icon fa red fa-times", "Retirer " + item.GetFullName());
+                }
+
+                if (friendship.accepter == false && friendship.refuser == true)
+                {
+                    <span class="icon fa red fa-times-circle" title="Vous avez décliné de la demande d'amitié avec @item.GetFullName()"></span>
+                    @Helper.IconConfirmCmd("Friendships", "SendFriendshipRequest/" + item.Id, "command icon fa green fa-plus-circle", "Envoyer une demande d'amitié à " + item.GetFullName())
+                }
+            }
+
+            else
+            {
+                if (item.Blocked)
+                {
+                    <span class=" icon fa red fa-ban" title="@item.GetFullName() est banni "></span>
+                }
+
+                else
+                {
+                    @Helper.IconCmd("Friendships", "SendFriendshipRequest/" + item.Id, "command icon fa green fa-plus-circle", "Envoyer une demande d'amitié à " + item.GetFullName())
+                }
+            }
+
+        }
+    </div>
+}

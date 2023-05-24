@@ -1,0 +1,25 @@
+﻿@model IEnumerable<ChatManager.Models.Chat>
+
+
+@foreach (var item in Model)
+{
+    <div class="conversation">
+        <div style="margin-right:10px">
+            @Helper.Image(ChatManager.Models.DB.Users.FindUser(item.idUser).GetAvatarURL(), "UserSmallAvatar")
+        </div>
+        <div style="margin-right:10px">
+            @Helper.Image(ChatManager.Models.DB.Users.FindUser(item.idAmi).GetAvatarURL(), "UserSmallAvatar")
+        </div>
+        <div style="margin-right:10px">
+            @Helper.IconConfirmCmd("Chat", "DeleteChatLog/" + item.Id, "command icon fa-times-circle", "Effacer ce message ")
+        </div>
+        <div style="margin-right:10px">
+            <div class="sentLayout-smaller">
+                <div class="sent" id="sent_@item.Id" title="@item.messageSentTime.ToString("HH:mm")">
+                    @Helper.ParseContent(item.message)
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
